@@ -60,12 +60,14 @@ getUserFiles = do
        a <- getUserFiles
        return (l : a)
 
+{- Doesn't work yet, have to figure out why
 emptyBuffer :: IO ()
 emptyBuffer = do
   b <- isEOF
   if b
-     then putStrLn "VIDE"
-     else putStrLn "PAS VIDE"
+     then 
+     else 
+-}
 
 manualBackup :: IO ()
 manualBackup = mapM_ issueBackup (map fst dispatch)
@@ -76,8 +78,8 @@ restoreFiles = do
   l <- getUserFiles
   mapM_ (\f -> copyFile (backups </> (removeRoot f)) f ) l
 
-viewFiles = undefined
-removeFiles = undefined
+viewFiles = undefined -- To be implemented
+removeFiles = undefined -- To be implemented
 
 restoreGreetings :: IO ()
 restoreGreetings = mapM_ putStrLn
