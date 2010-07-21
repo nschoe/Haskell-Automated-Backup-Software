@@ -42,12 +42,3 @@ timer pol time = do
        let delay = maybe oneDay id (lookup pol toAdd)
        timer pol (addToClockTime delay time)
      else timer pol time
-  
-{-
-timer' :: (BackupPolicy, ClockTime) -> IO (Bool)
-timer' (pol, time) = do
-  now <- getClockTime
-  if time <= now
-     then issueBackup pol >> return True
-     else return False
--}
