@@ -17,7 +17,7 @@ import System.FilePath ((</>), takeDirectory, pathSeparator, isPathSeparator)
 import System.IO (IOMode(..), readFile, writeFile)
 import Control.Monad (filterM)
 
-workspace = "/Users/nschoe/Documents/Storage"
+workspace = "/Users/nschoe/Documents/Storage" -- For my dev' purpose of course, need to be set.
 daily = workspace </> "schedule" </> "daily"
 hourly = workspace </> "schedule" </> "hourly"
 weekly = workspace </> "schedule" </> "weekly"
