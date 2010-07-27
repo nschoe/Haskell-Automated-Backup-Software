@@ -9,6 +9,7 @@ module Storage (
                , monthly
                , dispatch
                , backups
+               , dates
                ) where
 
 import System.Directory (doesFileExist, createDirectoryIfMissing)
@@ -27,6 +28,7 @@ dispatch :: [(BackupPolicy, FilePath)]
 dispatch = [(Daily, daily), (Hourly, hourly), (Weekly, weekly), (Monthly, monthly)]
 
 backups = workspace </> "backups"
+dates = workspace </> "dates"
 
 data BackupPolicy = Monthly | Weekly | Daily | Hourly
                     deriving (Eq, Show, Read)

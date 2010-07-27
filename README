@@ -1,0 +1,4 @@
+DAEMON:
+main function that checks a 4-line file every X minutes (15?), there are dates stored in it,
+it compares the dates and launched in a new thread the issueBackup functions^^
+Simple, isn't it?
