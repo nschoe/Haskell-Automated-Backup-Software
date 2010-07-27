@@ -1,4 +1,2 @@
-DAEMON:
-main function that checks a 4-line file every X minutes (15?), there are dates stored in it,
-it compares the dates and launched in a new thread the issueBackup functions^^
-Simple, isn't it?
+v1.0 : First working version, provides adding files for backup schedule,
+issueing general backups, and a working daemon that backups the files.
