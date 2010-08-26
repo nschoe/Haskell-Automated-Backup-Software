@@ -1,0 +1,3 @@
+- Use real parsing for the settings
+- Modify functions that read/write files to use safe methods (try, catch, aquire-use-release cycle...)
+- Improve the program to handle distant backup location: FTP server, dedicated server...

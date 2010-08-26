@@ -1,2 +1,1 @@
-v1.0 : First working version, provides adding files for backup schedule,
-issueing general backups, and a working daemon that backups the files.
+v0.1 : Still in dev...
