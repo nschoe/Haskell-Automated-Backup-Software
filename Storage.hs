@@ -11,6 +11,7 @@ module Storage (
                , addForSchedule
                , mapBP
                , getSettings
+               , removeRoot
                ) where
 
 import Control.Monad (filterM)
@@ -68,7 +69,6 @@ addForSchedule settings pol xs = do
 {-| Maintains the internal hierarchy inside 'getBackups' identical to the user's hard drive. |-}
 updateHierarchy :: Settings -> [FilePath] -> IO ()
 updateHierarchy settings = mapM_ (createDirectoryIfMissing True . (</>) (getBackups settings) . removeRoot . takeDirectory)
-  where removeRoot = dropWhile isPathSeparator
 
 {-| Extract the schedule file based on the backup policy it is given. |-}  
 mapBP :: BackupPolicy -> (Settings -> FilePath)
@@ -76,3 +76,12 @@ mapBP Hourly  = getHourly
 mapBP Daily   = getDaily
 mapBP Weekly  = getWeekly
 mapBP Monthly = getMonthly
+
+{-| Remove the root folder in either Windows (C:,D:,...) or Linux (/) of a FilePath. |-}
+removeRoot :: FilePath -> FilePath
+removeRoot [] = []  -- useless, but for consistency sake
+removeRoot ('/':xs) = xs -- linux root
+removeRoot l@(x:xs) = if x `elem` windowsDrives && head xs == ':'
+                        then dropWhile isPathSeparator $ tail xs
+                        else l
+  where windowsDrives = ['A'..'Z']

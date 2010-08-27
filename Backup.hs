@@ -9,7 +9,6 @@ import System.FilePath ((</>), isPathSeparator)
 {-| Backup (i.e. copy into internal architecture) a list of files |-}
 backup :: Settings -> [FilePath] -> IO ()
 backup settings = mapM_ (\f -> copyFile f ((getBackups settings) </> (removeRoot f)))
-  where removeRoot = dropWhile isPathSeparator
 
 issueBackup :: Settings -> BackupPolicy -> IO ()
 {-issueBackup settings p = do
