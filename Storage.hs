@@ -1,6 +1,9 @@
 {- File:         Storage.hs
    Version:      0.1
+   Author:       nschoe (ns.schoe@gmail.com)
+   Maintainer:   nschoe (ns.schoe@gmail.com)
    Provides:     Storage
+   Portability:  Linux (tested on Archlinux) / Windows (tested on Windows seven)
    Synopsis:     Provides a very basic library that sets "global variables",
                  defines the data structures, keep shedule files up to date.
 -}
@@ -12,6 +15,7 @@ module Storage (
                , mapBP
                , getSettings
                , removeRoot
+               , getScheduldedFiles
                ) where
 
 import Control.Monad (filterM)
@@ -70,6 +74,12 @@ addForSchedule settings pol xs = do
 updateHierarchy :: Settings -> [FilePath] -> IO ()
 updateHierarchy settings = mapM_ (createDirectoryIfMissing True . (</>) (getBackups settings) . removeRoot . takeDirectory)
 
+{-| List all the files schedulded for a backup policy. |-}
+getScheduldedFiles :: Settings -> BackupPolicy -> IO [FilePath]
+getScheduldedFiles settings pol = do
+  contents <- readFile $ mapBP pol $ settings       -- needs to be improved: use exception proof, such as try, or catch or equivalent
+  return (lines contents)
+
 {-| Extract the schedule file based on the backup policy it is given. |-}  
 mapBP :: BackupPolicy -> (Settings -> FilePath)
 mapBP Hourly  = getHourly
@@ -85,3 +95,5 @@ removeRoot l@(x:xs) = if x `elem` windowsDrives && head xs == ':'
                         then dropWhile isPathSeparator $ tail xs
                         else l
   where windowsDrives = ['A'..'Z']
+        
+    
