@@ -13,15 +13,23 @@ module Client where
 
 import Backup
 import Storage
-import Control.Monad (mapM_)
-import Graphics.UI.Gtk
+import Control.Monad (mapM_, (>>))
+import Data.Char (toLower)
 import Data.IORef
+import Graphics.UI.Gtk
+
+data BackupAction = AddFiles (Maybe BackupPolicy)
+            | ViewFiles (Maybe BackupPolicy)
+            | RestoreFiles (Maybe BackupPolicy)
+            | RemoveFiles (Maybe BackupPolicy)
+            | Menu
+              deriving (Eq)
 
 {-| The fonction is passed the file which contains the settings for our application. |-}
 main :: FilePath -> IO ()
 main f = do
   settings <- getSettings f
-  -- IOREF TO BE PUT HERE !!!
+  state <- newIORef Menu
   
   initGUI
   
@@ -30,7 +38,7 @@ main f = do
   set mainWindow [windowTitle := "Haskell Automated Backup Software", windowDefaultWidth := 150,
                   windowDefaultHeight := 200, containerBorderWidth := 10]
   infoWindow <- windowNew
-  set infoWindow [windowTitle := "Information"]
+  set infoWindow [windowTitle := "Information", windowDefaultWidth := 130, windowDefaultHeight := 35, containerBorderWidth := 10]
   fcWindow      <- windowNew
   fcWidget      <- fileChooserWidgetNew FileChooserActionOpen
   set fcWindow [windowTitle := "Choose files...", windowDefaultWidth := 500,
@@ -110,12 +118,83 @@ main f = do
 -- Signals connection
   onDestroy mainWindow (myQuit [infoWindow,fcWindow,policyWindow,displayWindow])
   onClicked quitButton (widgetDestroy mainWindow)
+  
+  onClicked addButton (addFunction state infoLabel policyWindow)
+  onClicked viewButton (viewFunction state infoLabel policyWindow)
+  mapM_ (\b -> onClicked b ((policyFunction settings state infoLabel b fcWindow displayWindow displayText)
+                            >> (widgetHide policyWindow))) [hourlyButton, dailyButton, weeklyButton, monthlyButton] 
+  onClicked issueButton ((issueAllBackups settings) >> (giveInfo infoLabel "All of your schedulded files have been backed up!"))
+  onClicked removeButton (giveInfo infoLabel "Sorry, feature not implemented yet!")
+  onClicked restoreButton (giveInfo infoLabel "Sorry, feature not implemented yet!")
+  
+  onClicked cancelButton ((giveInfo infoLabel "Choose the action you want to do.") >> (writeIORef state Menu) >> (widgetHide fcWindow))
+  onClicked selectButton ((selectFunction settings state infoLabel fcWidget) >> (widgetHide fcWindow))
+  onClicked displayOkButton ((giveInfo infoLabel "Choose the action you want to do.") >> (widgetHide displayWindow))
+  
+-- Launching the GUI
   widgetShowAll infoWindow
   widgetShowAll mainWindow
-  widgetShowAll displayWindow
   mainGUI
   
 myQuit :: [Window] -> IO ()
 myQuit l = do
   mapM_ widgetDestroy l
   mainQuit
+  
+addFunction :: IORef BackupAction -> Label -> Window -> IO ()
+addFunction st info policyWindow = do
+  giveInfo info "To which policy do you wish do add you files?"
+  writeIORef st $ AddFiles Nothing
+  widgetShowAll policyWindow
+
+viewFunction :: IORef BackupAction -> Label -> Window -> IO ()
+viewFunction st info policyWindow = do
+  giveInfo info "The files for which policy do you want to view?"
+  writeIORef st $ ViewFiles Nothing
+  widgetShowAll policyWindow
+  
+selectFunction :: Settings -> IORef BackupAction -> Label -> FileChooserWidget -> IO ()
+selectFunction settings state info widget = do
+  AddFiles (Just pol) <- readIORef state        -- Maybe a bit risky, but if designed well, the select button can only be clicked over adding files
+  files <- fileChooserGetFilenames widget
+  addForSchedule settings pol files
+  let nb = length files
+      m  = case nb of
+        1 -> "1 file "
+        _ -> show nb ++ " files "
+  giveInfo info $ m ++ "added for " ++ map toLower (show pol) ++ " backups."
+
+policyFunction :: Settings -> IORef BackupAction -> Label -> Button -> Window -> Window -> TextView -> IO ()
+policyFunction settings state info button fcWindow dWindow tv = do
+  action <- readIORef state
+  policy <- get button buttonLabel
+  let policy' = read policy :: BackupPolicy
+  case action of
+    AddFiles _ -> do
+      writeIORef state (AddFiles (Just policy'))
+      giveInfo info $ "Select the files you want to add for " ++ map toLower policy ++ " backups.\n'Ctrl' for multiple selection."
+      widgetShowAll fcWindow
+    ViewFiles _ -> do
+      writeIORef state (ViewFiles (Just policy'))
+      giveInfo info $ "Here are the files scheduled for " ++ map toLower policy ++ " backups."
+      viewFiles settings info state tv
+      widgetShowAll dWindow
+    RestoreFiles _ -> do
+      giveInfo info "Feature not implemented yet."
+  
+giveInfo :: Label -> String -> IO ()
+giveInfo label str = do
+  set label [labelLabel := str]
+
+viewFiles :: Settings -> Label -> IORef BackupAction -> TextView -> IO ()
+viewFiles settings info state tv = do
+  ViewFiles (Just pol) <-readIORef state
+  files <- getScheduldedFiles settings pol
+  buf <- textViewGetBuffer tv
+  textBufferSetText buf (unlines files)
+  textViewSetBuffer tv buf
+  let nb = length files
+      m = case nb of
+        1 -> "1 file "
+        _ -> show nb ++ " files "
+  giveInfo info $ m ++ "are schedulded for " ++ map toLower (show pol) ++ " backups."
